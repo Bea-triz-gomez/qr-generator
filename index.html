@@ -1,254 +1,721 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generador de Códigos QR</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f5f5f5;
-      padding: 2rem;
-      margin: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <!-- Añadir qrious desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .qr-generator {
-      max-width: 480px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.06);
-    }
+        .qr-generator-container {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    .qr-generator img.logo {
-      display: block;
-      max-width: 180px;
-      margin: 0 auto 2rem;
-    }
+        .qr-generator-widget {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 32px;
+            width: 100%;
+            max-width: 480px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
 
-    .qr-mode-switch {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
+        .qr-generator-widget:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
 
-    .qr-mode-switch button {
-      flex: 1;
-      padding: 0.6rem;
-      border: none;
-      border-radius: 6px;
-      background: #ddd;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
+        .qr-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-    .qr-mode-switch button.active {
-      background: #b01917;
-      color: white;
-    }
+        .qr-subtitle {
+            font-size: 16px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
 
-    label {
-      display: block;
-      margin: 1rem 0 0.3rem;
-      font-weight: 600;
-    }
+        .qr-input-group {
+            margin-bottom: 24px;
+        }
 
-    input,
-    select {
-      width: 100%;
-      padding: 0.5rem;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
+        .qr-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
 
-    button#qr-generate {
-      margin-top: 1.5rem;
-      background: #b01917;
-      color: white;
-      font-weight: bold;
-      padding: 0.8rem;
-      border: none;
-      border-radius: 6px;
-      width: 100%;
-      cursor: pointer;
-    }
+        .qr-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: #fafafa;
+        }
 
-    .qr-output {
-      margin-top: 2rem;
-      text-align: center;
-    }
+        .qr-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
 
-    canvas {
-      margin-bottom: 1rem;
-      padding: 8px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
+        .qr-input:hover {
+            border-color: #d1d5db;
+        }
 
-    .qr-error {
-      color: #b01917;
-      text-align: center;
-      margin-top: 1rem;
-      font-weight: bold;
-    }
-  </style>
+        .qr-mode-selector {
+            margin-bottom: 24px;
+        }
+
+        .qr-mode-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .qr-mode-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fafafa;
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .qr-mode-btn:hover {
+            border-color: #d1d5db;
+            background: #f3f4f6;
+        }
+
+        .qr-mode-btn.active {
+            border-color: #3b82f6;
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .qr-input-section {
+            transition: all 0.3s ease;
+        }
+
+        .qr-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .qr-size-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .qr-size-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .qr-size-select {
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fafafa;
+            transition: all 0.2s ease;
+        }
+
+        .qr-size-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+        }
+
+        .qr-generate-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .qr-generate-btn:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .qr-generate-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .qr-output {
+            text-align: center;
+            padding: 24px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 2px dashed #d1d5db;
+            transition: all 0.3s ease;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-output.has-code {
+            background: white;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-placeholder {
+            color: #9ca3af;
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .qr-placeholder-icon {
+            width: 48px;
+            height: 48px;
+            opacity: 0.5;
+        }
+
+        .qr-code-container {
+            margin-bottom: 16px;
+        }
+
+        .qr-code-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            padding: 8px;
+        }
+
+        .qr-download-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qr-download-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-error {
+            color: #ef4444;
+            font-size: 14px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #fef2f2;
+            border-radius: 8px;
+            border-left: 4px solid #ef4444;
+            display: none;
+        }
+
+        .qr-success {
+            color: #10b981;
+            font-size: 14px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f0fdf4;
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff40;
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 640px) {
+            .qr-generator-container {
+                padding: 16px;
+            }
+            
+            .qr-generator-widget {
+                padding: 24px;
+            }
+            
+            .qr-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .qr-title {
+                font-size: 24px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="qr-generator">
-    <img src="http://beatrizgomezizquierdo.com/wp-content/uploads/2025/06/mi-logo-de-verdad-de-la-buena-15.png" alt="Logo" class="logo">
+    <div class="qr-generator-container">
+        <div class="qr-generator-widget">
+            <h1 class="qr-title">QR Code Generator</h1>
+            <p class="qr-subtitle">Generate QR codes for text, URLs, or contact information</p>
+            
+            <div class="qr-mode-selector">
+                <label class="qr-label">QR Code Type</label>
+                <div class="qr-mode-buttons">
+                    <button type="button" id="text-mode" class="qr-mode-btn active">Text/URL</button>
+                    <button type="button" id="contact-mode" class="qr-mode-btn">Contact Card</button>
+                </div>
+            </div>
 
-    <div class="qr-mode-switch">
-      <button id="qr-mode-text" class="active">Texto / URL</button>
-      <button id="qr-mode-contact">Contacto</button>
+            <div id="text-input-section" class="qr-input-section">
+                <div class="qr-input-group">
+                    <label for="qr-text" class="qr-label">Text or URL</label>
+                    <input 
+                        type="text" 
+                        id="qr-text" 
+                        class="qr-input" 
+                        placeholder="Enter text, URL, or any data..."
+                        maxlength="1000"
+                    >
+                </div>
+            </div>
+
+            <div id="contact-input-section" class="qr-input-section" style="display: none;">
+                <div class="qr-input-group">
+                    <label for="contact-name" class="qr-label">Full Name *</label>
+                    <input 
+                        type="text" 
+                        id="contact-name" 
+                        class="qr-input" 
+                        placeholder="Enter full name..."
+                        required
+                    >
+                </div>
+
+                <div class="qr-input-group">
+                    <label for="contact-phone" class="qr-label">Phone Number</label>
+                    <input 
+                        type="tel" 
+                        id="contact-phone" 
+                        class="qr-input" 
+                        placeholder="Enter phone number..."
+                    >
+                </div>
+
+                <div class="qr-input-group">
+                    <label for="contact-email" class="qr-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="contact-email" 
+                        class="qr-input" 
+                        placeholder="Enter email address..."
+                    >
+                </div>
+
+                <div class="qr-input-group">
+                    <label for="contact-company" class="qr-label">Company/Organization</label>
+                    <input 
+                        type="text" 
+                        id="contact-company" 
+                        class="qr-input" 
+                        placeholder="Enter company name (optional)..."
+                    >
+                </div>
+
+                <div class="qr-input-group">
+                    <label for="contact-website" class="qr-label">Website</label>
+                    <input 
+                        type="url" 
+                        id="contact-website" 
+                        class="qr-input" 
+                        placeholder="Enter website URL (optional)..."
+                    >
+                </div>
+            </div>
+
+            <div id="qr-error" class="qr-error"></div>
+            <div id="qr-success" class="qr-success"></div>
+
+            <div class="qr-controls">
+                <div class="qr-size-group">
+                    <label class="qr-size-label">QR Code Size</label>
+                    <select id="qr-size" class="qr-size-select">
+                        <option value="200">Small (200x200)</option>
+                        <option value="300" selected>Medium (300x300)</option>
+                        <option value="400">Large (400x400)</option>
+                        <option value="500">Extra Large (500x500)</option>
+                    </select>
+                </div>
+
+                <div class="qr-size-group">
+                    <label class="qr-size-label">Generate QR Code</label>
+                    <button id="generate-btn" class="qr-generate-btn">
+                        <span id="btn-text">Generate</span>
+                        <div id="btn-spinner" class="loading-spinner" style="display: none;"></div>
+                    </button>
+                </div>
+            </div>
+
+            <div id="qr-output" class="qr-output">
+                <div class="qr-placeholder">
+                    <svg class="qr-placeholder-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8 0h2v2h-2v-2zm0 4h2v2h-2v-2zm4-4h2v2h-2v-2zm0 4h2v2h-2v-2zm-4-8h2v2h-2v-2zm4 0h2v2h-2v-2z"/>
+                    </svg>
+                    <span>Your QR code will appear here</span>
+                </div>
+            </div>
+
+            <button id="download-btn" class="qr-download-btn" style="display: none;">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2a1 1 0 0 1 1 1v10.586l3.293-3.293a1 1 0 1 1 1.414 1.414l-5 5a1 1 0 0 1-1.414 0l-5-5a1 1 0 1 1 1.414-1.414L11 13.586V3a1 1 0 0 1 1-1z"/>
+                    <path d="M3 17a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1z"/>
+                </svg>
+                Download PNG
+            </button>
+        </div>
     </div>
 
-    <div id="qr-text-inputs">
-      <label>Texto o URL</label>
-      <input id="qr-text" type="text" placeholder="https://...">
-    </div>
-
-    <div id="qr-contact-inputs" style="display:none">
-      <label>Nombre completo *</label>
-      <input id="qr-c-name" type="text">
-      <label>Email</label>
-      <input id="qr-c-email" type="email">
-      <label>Teléfono</label>
-      <input id="qr-c-phone" type="tel">
-      <label>Empresa</label>
-      <input id="qr-c-company" type="text">
-      <label>Web</label>
-      <input id="qr-c-website" type="url">
-    </div>
-
-    <label>Tamaño</label>
-    <select id="qr-size">
-      <option value="200">Pequeño</option>
-      <option value="300" selected>Medio</option>
-      <option value="400">Grande</option>
-    </select>
-
-    <button id="qr-generate">Generar QR</button>
-
-    <div id="qr-output" class="qr-output"></div>
-    <div id="qr-error" class="qr-error"></div>
-  </div>
-
-  <script>
-    (function() {
-      const modeText = document.getElementById('qr-mode-text');
-      const modeContact = document.getElementById('qr-mode-contact');
-      const textInputs = document.getElementById('qr-text-inputs');
-      const contactInputs = document.getElementById('qr-contact-inputs');
-      const output = document.getElementById('qr-output');
-      const errorBox = document.getElementById('qr-error');
-      let currentMode = 'text';
-
-      modeText.onclick = () => {
-        currentMode = 'text';
-        modeText.classList.add('active');
-        modeContact.classList.remove('active');
-        textInputs.style.display = 'block';
-        contactInputs.style.display = 'none';
-        clearOutput();
-      };
-
-      modeContact.onclick = () => {
-        currentMode = 'contact';
-        modeContact.classList.add('active');
-        modeText.classList.remove('active');
-        textInputs.style.display = 'none';
-        contactInputs.style.display = 'block';
-        clearOutput();
-      };
-
-      function clearOutput() {
-        output.innerHTML = '';
-        errorBox.textContent = '';
-      }
-
-      function showError(msg) {
-        errorBox.textContent = msg;
-      }
-
-      document.getElementById('qr-generate').onclick = () => {
-        clearOutput();
-        let data = '';
-
-        if (currentMode === 'text') {
-          const text = document.getElementById('qr-text').value.trim();
-          if (!text) return showError('Introduce un texto o URL válido.');
-          data = text;
-        } else {
-          const name = document.getElementById('qr-c-name').value.trim();
-          if (!name) return showError('El nombre es obligatorio.');
-          const email = document.getElementById('qr-c-email').value.trim();
-          const phone = document.getElementById('qr-c-phone').value.trim();
-          const company = document.getElementById('qr-c-company').value.trim();
-          const website = document.getElementById('qr-c-website').value.trim();
-
-          data = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nN:${name};;;;\n`;
-          if (phone) data += `TEL:${phone}\n`;
-          if (email) data += `EMAIL:${email}\n`;
-          if (company) data += `ORG:${company}\n`;
-          if (website) data += `URL:${website.startsWith('http') ? website : 'https://' + website}\n`;
-          data += `END:VCARD`;
-        }
-
-        generateQRCode(data);
-      };
-
-      function generateQRCode(text) {
-        const size = parseInt(document.getElementById('qr-size').value);
-        const canvas = document.createElement('canvas');
-        const qr = new QRCodeGenerator(text);
-        qr.make();
-
-        const ctx = canvas.getContext('2d');
-        const cellSize = Math.floor(size / qr.moduleCount);
-        const margin = Math.floor((size - qr.moduleCount * cellSize) / 2);
-        canvas.width = canvas.height = size;
-
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, size, size);
-        ctx.fillStyle = '#000'; // QR en negro
-
-        for (let r = 0; r < qr.moduleCount; r++) {
-          for (let c = 0; c < qr.moduleCount; c++) {
-            if (qr.isDark(r, c)) {
-              ctx.fillRect(margin + c * cellSize, margin + r * cellSize, cellSize, cellSize);
+    <script>
+        class QRGenerator {
+            constructor() {
+                this.initializeElements();
+                this.bindEvents();
+                this.currentQRCode = null;
+                this.currentMode = 'text';
+                this.qr = new QRious({
+                    element: document.getElementById('qr-output').querySelector('canvas') || document.createElement('canvas'),
+                    size: 300,
+                    background: '#ffffff',
+                    foreground: '#000000'
+                });
+                this.qr.element.style.display = 'none';
             }
-          }
+
+            initializeElements() {
+                this.textInput = document.getElementById('qr-text');
+                this.contactName = document.getElementById('contact-name');
+                this.contactPhone = document.getElementById('contact-phone');
+                this.contactEmail = document.getElementById('contact-email');
+                this.contactCompany = document.getElementById('contact-company');
+                this.contactWebsite = document.getElementById('contact-website');
+                this.textModeBtn = document.getElementById('text-mode');
+                this.contactModeBtn = document.getElementById('contact-mode');
+                this.textInputSection = document.getElementById('text-input-section');
+                this.contactInputSection = document.getElementById('contact-input-section');
+                this.sizeSelect = document.getElementById('qr-size');
+                this.generateBtn = document.getElementById('generate-btn');
+                this.btnText = document.getElementById('btn-text');
+                this.btnSpinner = document.getElementById('btn-spinner');
+                this.output = document.getElementById('qr-output');
+                this.errorDiv = document.getElementById('qr-error');
+                this.successDiv = document.getElementById('qr-success');
+                this.downloadBtn = document.getElementById('download-btn');
+            }
+
+            bindEvents() {
+                this.generateBtn.addEventListener('click', () => this.generateQR());
+                this.textModeBtn.addEventListener('click', () => this.switchMode('text'));
+                this.contactModeBtn.addEventListener('click', () => this.switchMode('contact'));
+                
+                this.textInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.generateQR();
+                });
+                
+                [this.textInput, this.contactName, this.contactPhone, this.contactEmail, this.contactCompany, this.contactWebsite].forEach(input => {
+                    input.addEventListener('input', () => this.clearMessages());
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') this.generateQR();
+                    });
+                });
+            }
+
+            switchMode(mode) {
+                this.currentMode = mode;
+                this.clearMessages();
+                
+                if (mode === 'text') {
+                    this.textModeBtn.classList.add('active');
+                    this.contactModeBtn.classList.remove('active');
+                    this.textInputSection.style.display = 'block';
+                    this.contactInputSection.style.display = 'none';
+                } else {
+                    this.contactModeBtn.classList.add('active');
+                    this.textModeBtn.classList.remove('active');
+                    this.textInputSection.style.display = 'none';
+                    this.contactInputSection.style.display = 'block';
+                }
+                
+                this.resetOutput();
+            }
+
+            resetOutput() {
+                this.output.innerHTML = `
+                    <div class="qr-placeholder">
+                        <svg class="qr-placeholder-icon" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8 0h2v2h-2v-2zm0 4h2v2h-2v-2zm4-4h2v2h-2v-2zm0 4h2v2h-2v-2zm-4-8h2v2h-2v-2zm4 0h2v2h-2v-2z"/>
+                        </svg>
+                        <span>Your QR code will appear here</span>
+                    </div>
+                `;
+                this.output.classList.remove('has-code');
+                this.downloadBtn.style.display = 'none';
+                this.qr.element = this.output.querySelector('canvas') || document.createElement('canvas');
+                this.qr.element.style.display = 'none';
+            }
+
+            clearMessages() {
+                this.errorDiv.style.display = 'none';
+                this.successDiv.style.display = 'none';
+            }
+
+            showError(message) {
+                this.errorDiv.textContent = message;
+                this.errorDiv.style.display = 'block';
+                this.successDiv.style.display = 'none';
+            }
+
+            showSuccess(message) {
+                this.successDiv.textContent = message;
+                this.successDiv.style.display = 'block';
+                this.errorDiv.style.display = 'none';
+            }
+
+            setLoading(isLoading) {
+                if (isLoading) {
+                    this.generateBtn.disabled = true;
+                    this.btnText.style.display = 'none';
+                    this.btnSpinner.style.display = 'block';
+                } else {
+                    this.generateBtn.disabled = false;
+                    this.btnText.style.display = 'block';
+                    this.btnSpinner.style.display = 'none';
+                }
+            }
+
+            validateInput(text) {
+                if (!text.trim()) {
+                    throw new Error('Please enter some text or URL to generate QR code');
+                }
+                if (text.length > 1000) {
+                    throw new Error('Text is too long. Maximum 1000 characters allowed.');
+                }
+                return text.trim();
+            }
+
+            validateContactInput() {
+                const name = this.contactName.value.trim();
+                if (!name) {
+                    throw new Error('Name is required for contact QR code');
+                }
+                
+                const email = this.contactEmail.value.trim();
+                if (email && !this.isValidEmail(email)) {
+                    throw new Error('Please enter a valid email address');
+                }
+                
+                const website = this.contactWebsite.value.trim();
+                if (website && !this.isValidUrl(website)) {
+                    throw new Error('Please enter a valid website URL');
+                }
+                
+                return {
+                    name,
+                    phone: this.contactPhone.value.trim(),
+                    email,
+                    company: this.contactCompany.value.trim(),
+                    website
+                };
+            }
+
+            isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            isValidUrl(url) {
+                try {
+                    new URL(url.startsWith('http') ? url : 'https://' + url);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+
+            generateVCard(contactData) {
+                let vcard = `BEGIN:VCARD\nVERSION:3.0\n`;
+                vcard += `N:${contactData.name};;;;\n`;
+                vcard += `FN:${contactData.name}\n`;
+                if (contactData.phone) {
+                    vcard += `TEL;TYPE=CELL:${contactData.phone}\n`;
+                }
+                if (contactData.email) {
+                    vcard += `EMAIL:${contactData.email}\n`;
+                }
+                if (contactData.company) {
+                    vcard += `ORG:${contactData.company}\n`;
+                }
+                if (contactData.website) {
+                    const url = contactData.website.startsWith('http') ? contactData.website : 'https://' + contactData.website;
+                    vcard += `URL:${url}\n`;
+                } else {
+                    vcard += `URL:https://example.com\n`; // Placeholder, adjust as needed
+                }
+                vcard += `END:VCARD`;
+                return vcard;
+            }
+
+            generateQR() {
+                try {
+                    this.clearMessages();
+                    this.setLoading(true);
+
+                    let text;
+                    let displayText;
+                    
+                    if (this.currentMode === 'text') {
+                        text = this.validateInput(this.textInput.value);
+                        displayText = text;
+                    } else {
+                        const contactData = this.validateContactInput();
+                        text = this.generateVCard(contactData);
+                        displayText = `Contact: ${contactData.name}`;
+                    }
+                    
+                    const size = parseInt(this.sizeSelect.value);
+                    this.qr.size = size;
+                    this.qr.background = '#ffffff'; // Blanco
+                    this.qr.foreground = '#000000'; // Negro
+                    this.qr.value = text;
+
+                    this.displayQRCode(size, displayText);
+                    this.showSuccess(this.currentMode === 'text' ? 'QR code generated successfully!' : 'Contact QR code generated successfully!');
+
+                } catch (error) {
+                    console.error('QR Generation Error:', error);
+                    this.showError(error.message || 'Failed to generate QR code. Please try again.');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            displayQRCode(size, text) {
+                this.output.innerHTML = '';
+                this.output.classList.add('has-code');
+                const canvas = this.qr.element;
+                canvas.width = size;
+                canvas.height = size;
+                canvas.style.display = 'block';
+                canvas.className = 'qr-code-image';
+                this.output.appendChild(canvas);
+
+                this.downloadBtn.style.display = 'block';
+                this.downloadBtn.addEventListener('click', () => this.downloadQRCode(canvas, text));
+
+                this.currentQRCode = { canvas, text };
+            }
+
+            downloadQRCode(canvas, text) {
+                try {
+                    const link = document.createElement('a');
+                    const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
+                    const prefix = this.currentMode === 'contact' ? 'contact_qr' : 'qr_code';
+                    const filename = `${prefix}_${sanitizedText}_${Date.now()}.png`;
+                    
+                    canvas.toBlob((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        link.href = url;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        
+                        this.showSuccess('QR code downloaded successfully!');
+                    }, 'image/png', 1.0);
+
+                } catch (error) {
+                    console.error('Download Error:', error);
+                    this.showError('Failed to download QR code. Please try again.');
+                }
+            }
         }
 
-        output.appendChild(canvas);
-
-        const link = document.createElement('a');
-        link.textContent = 'Descargar PNG';
-        link.href = canvas.toDataURL();
-        link.download = `qr_${Date.now()}.png`;
-        link.style.display = 'inline-block';
-        link.style.marginTop = '10px';
-        output.appendChild(link);
-      }
-
-      function QRCodeGenerator(text) {
-        const qr = qrcode(0, 'M');
-        qr.addData(text);
-        qr.make();
-        return {
-          isDark: (r, c) => qr.isDark(r, c),
-          moduleCount: qr.getModuleCount()
-        };
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
-      document.head.appendChild(script);
-    })();
-  </script>
+        // Inicializar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => new QRGenerator());
+        } else {
+            new QRGenerator();
+        }
+    </script>
 </body>
 </html>
