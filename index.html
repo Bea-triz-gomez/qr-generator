@@ -210,6 +210,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
 
         .qr-output.has-code {
@@ -433,6 +434,7 @@
                     </svg>
                     <span>Your QR code will appear here</span>
                 </div>
+                <canvas id="qr-canvas" style="display: none;"></canvas>
             </div>
 
             <button id="download-btn" class="qr-download-btn" style="display: none;">
@@ -450,15 +452,14 @@
             constructor() {
                 this.initializeElements();
                 this.bindEvents();
-                this.currentQRCode = null;
                 this.currentMode = 'text';
                 this.qr = new QRious({
-                    element: document.getElementById('qr-output').querySelector('canvas') || document.createElement('canvas'),
+                    element: document.getElementById('qr-canvas'),
                     size: 300,
-                    background: '#ffffff',
-                    foreground: '#000000'
+                    background: '#ffffff', // Blanco
+                    foreground: '#000000'  // Negro
                 });
-                this.qr.element.style.display = 'none';
+                this.qr.element.style.border = '4px solid #003366'; // Borde para visibilidad
             }
 
             initializeElements() {
@@ -480,6 +481,7 @@
                 this.errorDiv = document.getElementById('qr-error');
                 this.successDiv = document.getElementById('qr-success');
                 this.downloadBtn = document.getElementById('download-btn');
+                this.canvas = document.getElementById('qr-canvas');
             }
 
             bindEvents() {
@@ -519,6 +521,7 @@
             }
 
             resetOutput() {
+                this.output.classList.remove('has-code');
                 this.output.innerHTML = `
                     <div class="qr-placeholder">
                         <svg class="qr-placeholder-icon" fill="currentColor" viewBox="0 0 24 24">
@@ -527,10 +530,8 @@
                         <span>Your QR code will appear here</span>
                     </div>
                 `;
-                this.output.classList.remove('has-code');
+                this.canvas.style.display = 'none';
                 this.downloadBtn.style.display = 'none';
-                this.qr.element = this.output.querySelector('canvas') || document.createElement('canvas');
-                this.qr.element.style.display = 'none';
             }
 
             clearMessages() {
@@ -628,7 +629,7 @@
                     const url = contactData.website.startsWith('http') ? contactData.website : 'https://' + contactData.website;
                     vcard += `URL:${url}\n`;
                 } else {
-                    vcard += `URL:https://example.com\n`; // Placeholder, adjust as needed
+                    vcard += `URL:https://example.com\n`; // Placeholder
                 }
                 vcard += `END:VCARD`;
                 return vcard;
@@ -657,6 +658,11 @@
                     this.qr.foreground = '#000000'; // Negro
                     this.qr.value = text;
 
+                    // Verificar si el QR se generó
+                    if (!this.qr.toDataURL()) {
+                        throw new Error('Failed to generate QR code. Check console for details.');
+                    }
+
                     this.displayQRCode(size, displayText);
                     this.showSuccess(this.currentMode === 'text' ? 'QR code generated successfully!' : 'Contact QR code generated successfully!');
 
@@ -669,19 +675,16 @@
             }
 
             displayQRCode(size, text) {
-                this.output.innerHTML = '';
                 this.output.classList.add('has-code');
-                const canvas = this.qr.element;
-                canvas.width = size;
-                canvas.height = size;
-                canvas.style.display = 'block';
-                canvas.className = 'qr-code-image';
-                this.output.appendChild(canvas);
+                this.canvas.width = size;
+                this.canvas.height = size;
+                this.canvas.style.display = 'block';
+                this.canvas.className = 'qr-code-image';
+                this.output.innerHTML = '';
+                this.output.appendChild(this.canvas);
 
                 this.downloadBtn.style.display = 'block';
-                this.downloadBtn.addEventListener('click', () => this.downloadQRCode(canvas, text));
-
-                this.currentQRCode = { canvas, text };
+                this.downloadBtn.addEventListener('click', () => this.downloadQRCode(this.canvas, text));
             }
 
             downloadQRCode(canvas, text) {
@@ -716,6 +719,15 @@
         } else {
             new QRGenerator();
         }
+
+        // Verificación de carga de qrious
+        window.addEventListener('load', () => {
+            if (typeof QRious === 'undefined') {
+                console.error('QRious library not loaded. Check internet connection or CDN.');
+                document.getElementById('qr-error').textContent = 'Failed to load QR code library. Please check your internet connection.';
+                document.getElementById('qr-error').style.display = 'block';
+            }
+        });
     </script>
 </body>
 </html>
